@@ -15,17 +15,19 @@ public class Enricher implements EnrichmentTool, EnrichesWithMSISDN{
 
   @Override
   public void enrichWithMsisdn(EnrichedMessage enrichedMessage) {
-    String msisdn = enrichedMessage.getMsisdn();
-    User user = userRepository.getUser(msisdn);
-    if (user!=null) {
-      enrichedMessage.addEnrichments("firstName", user.getFirstName());
-      enrichedMessage.addEnrichments("lastName", user.getLastName());
+    synchronized (userRepository) {
+      String msisdn = enrichedMessage.getMsisdn();
+      User user = userRepository.getUser(msisdn);
+      if (user != null) {
+        enrichedMessage.addEnrichments("firstName", user.getFirstName());
+        enrichedMessage.addEnrichments("lastName", user.getLastName());
+      }
     }
   }
 
 
   @Override
-  public EnrichedMessage enrich(EnrichedMessage almostEnrichedMessage) {
+  public synchronized EnrichedMessage enrich(EnrichedMessage almostEnrichedMessage) {
     for (EnrichmentType enrichment:
          almostEnrichedMessage.getEnrichmentTypes()) {
       switch (enrichment) {

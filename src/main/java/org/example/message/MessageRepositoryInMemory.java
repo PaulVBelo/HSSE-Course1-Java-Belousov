@@ -81,7 +81,14 @@ public class MessageRepositoryInMemory implements MessageRepository {
 
   @Override
   public synchronized void unenrichMessage(Long id) throws ValidationException {
-
+    if (enrichedMessages.containsKey(id)) {
+      EnrichedMessage enrichedMessage = enrichedMessages.get(id);
+      Message message = new Message(enrichedMessage.getContent(), enrichedMessage.getMsisdn(), enrichedMessage.getEnrichmentTypes());
+      enrichedMessages.remove(id);
+      messages.put(id, message);
+    } else {
+      throw new ValidationException("Invalid message edit request", "No message with id " + id);
+    }
   }
 
   @Override

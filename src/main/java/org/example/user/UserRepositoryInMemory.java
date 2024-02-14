@@ -12,7 +12,7 @@ public class UserRepositoryInMemory implements UserRepository {
     users = new ConcurrentHashMap<>();
   }
   @Override
-  public  synchronized User getUser(String msisdn) {
+  public synchronized User getUser(String msisdn) {
     User user = users.get(msisdn);
     return user;
   }

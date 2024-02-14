@@ -24,27 +24,29 @@ public class EnrichmentService {
 
   // возвращается обогащенный (или необогащенный content сообщения)
   public String enrich(Long id) throws JsonProcessingException {
-    Message message = messageRepository.getMessage(id);
-    EnrichedMessage enrichedMessage;
-    if (message != null) {
-      if (message.getEnrichmentTypes().size()==0) {
+    synchronized (messageRepository) {
+      Message message = messageRepository.getMessage(id);
+      EnrichedMessage enrichedMessage;
+      if (message != null) {
+        if (message.getEnrichmentTypes().size()==0) {
 
-        return objectMapper.writeValueAsString(message);
+          return objectMapper.writeValueAsString(message);
+        } else {
+          enrichedMessage = new EnrichedMessage(message.getContent(),
+              message.getMsisdn(),
+              message.getEnrichmentTypes(),
+              new ConcurrentHashMap<String, String>());
+          EnrichedMessage trulyEnrichedMessage = enricher.enrich(enrichedMessage);
+          messageRepository.transferMessage(id, trulyEnrichedMessage);
+          return objectMapper.writeValueAsString(trulyEnrichedMessage);
+        }
       } else {
-        enrichedMessage = new EnrichedMessage(message.getContent(),
-            message.getMsisdn(),
-            message.getEnrichmentTypes(),
-            new ConcurrentHashMap<String, String>());
-        EnrichedMessage trulyEnrichedMessage = enricher.enrich(enrichedMessage);
-        messageRepository.transferMessage(id, trulyEnrichedMessage);
-        return objectMapper.writeValueAsString(trulyEnrichedMessage);
-      }
-    } else {
-      enrichedMessage = messageRepository.getEnrichedMessage(id);
-      if (enrichedMessage == null) {
-        return "Could not find a message with ID " + id;
-      } else {
-        return objectMapper.writeValueAsString(enrichedMessage);
+        enrichedMessage = messageRepository.getEnrichedMessage(id);
+        if (enrichedMessage == null) {
+          return "Could not find a message with ID " + id;
+        } else {
+          return objectMapper.writeValueAsString(enrichedMessage);
+        }
       }
     }
   }
